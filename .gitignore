@@ -1,3 +1,11 @@
+checkpoints/
+
+# Rundata database + generated corpora (rebuild with scripts/build_corpus.py)
+data/runes.sqlite3
+data/corpus.jsonl
+data/runes.txt
+data/translit.txt
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
