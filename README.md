@@ -14,7 +14,8 @@ python3 scripts/build_corpus.py
 That yields **6,815 inscriptions**, each with transliteration + Old Norse normalisation +
 English translation + dating/metadata, and produces:
 
-- `data/corpus.jsonl` — full records (good for instruction-tuning pairs: runes → norse → english)
+- `data/corpus.jsonl` — full records: runes, transliteration, Old Norse, English, dating, plus
+  **coordinates (97%), material/geology (80%), parish (95%)** lifted from the SQLite metadata
 - `data/runes.txt` — ~316k chars of Unicode Younger Futhark, the char-level LM corpus
 - `data/translit.txt` — the same text in scholarly transliteration
 
@@ -57,14 +58,33 @@ uv run python scripts/ithaca.py    # ~3.2M params, ~6 min on Apple Silicon
 | Head | Task | Label source | Val accuracy | Majority baseline |
 |------|------|--------------|--------------|-------------------|
 | restoration | fill masked runes (BERT-style) | self-supervised | ~29% top-1 | ~3% (1/34) |
-| period | dating U / V / M | Rundata dating prefix (100%) | ~82% | ~56% (Viking) |
-| region | geographic attribution | signature prefix (U, Ög, DR…), 11 classes + other (94%) | ~46% | ~24% (Norway) |
+| period | dating U / V / M | Rundata dating prefix (100%) | ~83% | ~56% (Viking) |
+| region | geographic attribution | signature prefix (U, Ög, DR…), 11 classes + other (94%) | ~47% | ~24% (Norway) |
+| material | geology: stone / wood / metal / bone / … | Rundata material_type (100%) | ~71% | ~62% (stone) |
 
 Restoration is the hard task (short inscriptions give each gap little context) but is
 self-supervised, so its training signal is unbounded. It also doubles as a scoring engine
 for ranking competing readings of contested strings — the original runeGPT goal, and the
 exact problem behind 150 years of argument over Rök's `raiþ þiaurikR` (Theodoric) vs Bo
 Ralph's re-segmentation `raið iau rinkR`.
+
+## Runestone Atlas (static site)
+
+A map of all **6,412 geolocated inscriptions**, in the spirit of
+[ithaca.deepmind.com](https://ithaca.deepmind.com) — except our model runs on MLX, so
+instead of serving live inference we **bake the model's predictions into static JSON**.
+Colour the map by dating period, by material/geology, or by *model agreement* (where the
+Ithaca model's period guess matches the ground truth — 87% of mapped stones); click any
+stone for its runes, transliteration, translation, dating, material, and the model's
+period/region/material predictions.
+
+```bash
+uv run python scripts/ithaca.py        # train (writes checkpoints-ithaca/)
+uv run python scripts/export_atlas.py  # corpus + predictions -> web/atlas.json
+python3 -m http.server -d web 8777     # open http://localhost:8777
+```
+
+`web/` is a self-contained Leaflet site (no build step) — deployable to GitHub Pages as-is.
 
 ## Later: a runic Gemma via LoRA
 

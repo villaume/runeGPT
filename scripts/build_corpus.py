@@ -135,20 +135,36 @@ def main() -> None:
     rows = con.execute(
         """
         SELECT s.signature_text, t.value, n.value, e.value,
-               m.dating, m.rune_type, m.year_from, m.year_to
+               m.dating, m.rune_type, m.year_from, m.year_to,
+               m.latitude, m.longitude, m.parish, m.municipality, m.district,
+               m.found_location, m.material, mt.name
         FROM signatures s
         JOIN transliterated_text t ON t.signature_id = s.id
         LEFT JOIN normalisation_norse n ON n.signature_id = s.id
         LEFT JOIN translation_english e ON e.signature_id = s.id
         LEFT JOIN meta_information m ON m.signature_id = s.id
+        LEFT JOIN material_types mt ON m.materialType_id = mt.id
         ORDER BY s.signature_text
         """
     ).fetchall()
 
+    def clean_str(v):
+        v = (v or "").strip()
+        return v or None
+
+    def coord(v):
+        # Rundata uses 0 for "unknown"; treat as missing.
+        try:
+            f = float(v)
+        except (TypeError, ValueError):
+            return None
+        return f if f != 0.0 else None
+
     records = []
     dropped_total: Counter = Counter()
     rune_chars = translit_chars = 0
-    for sig, translit, norse, english, dating, rune_type, y0, y1 in rows:
+    for (sig, translit, norse, english, dating, rune_type, y0, y1,
+         lat, lon, parish, municipality, district, found, material, mat_type) in rows:
         clean = clean_transliteration(translit or "")
         runes, dropped = to_runes(clean)
         dropped_total.update(dropped)
@@ -166,6 +182,14 @@ def main() -> None:
                 "rune_type": rune_type,
                 "year_from": y0,
                 "year_to": y1,
+                "lat": coord(lat),
+                "lon": coord(lon),
+                "parish": clean_str(parish),
+                "municipality": clean_str(municipality),
+                "district": clean_str(district),
+                "found_location": clean_str(found),
+                "material": clean_str(material),
+                "material_type": clean_str(mat_type),
             }
         )
 
@@ -186,10 +210,14 @@ def main() -> None:
         )
 
     mapped = rune_chars / translit_chars if translit_chars else 0
-    print(f"{len(records)} inscriptions -> data/corpus.jsonl")
+    n = len(records)
+    print(f"{n} inscriptions -> data/corpus.jsonl")
     print(f"rune corpus: {rune_chars} chars -> data/runes.txt")
     print(f"translit corpus: {translit_chars} chars -> data/translit.txt")
     print(f"char coverage: {mapped:.1%} of cleaned transliteration rendered as runes")
+    for field in ("lat", "material", "material_type", "parish"):
+        have = sum(1 for r in records if r[field] is not None)
+        print(f"  {field}: {have}/{n} ({have/n:.0%})")
     if dropped_total:
         top = ", ".join(f"{ch!r}×{n}" for ch, n in dropped_total.most_common(10))
         print(f"dropped (no mapping): {top}")
