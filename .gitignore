@@ -1,4 +1,5 @@
 checkpoints/
+checkpoints-ithaca/
 
 # Rundata database + generated corpora (rebuild with scripts/build_corpus.py)
 data/runes.sqlite3

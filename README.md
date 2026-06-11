@@ -42,6 +42,30 @@ uv run python scripts/sample.py --prompt "ᚴᚢᚦᚱᚢᚾ ᛬ ᛚᛁᛏ"   # 
 Best checkpoint by validation loss lands in `checkpoints/`. The val split is by
 inscription (shuffled lines), not a raw slice, so it isn't just one region of Sweden.
 
+## Ithaca for the younger futhark
+
+[DeepMind's Ithaca](https://github.com/google-deepmind/ithaca) restores damaged ancient
+Greek inscriptions and attributes them in space and time. The same three tasks map onto
+Rundata — so `scripts/ithaca.py` is a small **bidirectional** multitask transformer (a
+masked encoder, not the causal LM above — restoration needs to see runes on *both* sides
+of a gap):
+
+```bash
+uv run python scripts/ithaca.py    # ~3.2M params, ~6 min on Apple Silicon
+```
+
+| Head | Task | Label source | Val accuracy | Majority baseline |
+|------|------|--------------|--------------|-------------------|
+| restoration | fill masked runes (BERT-style) | self-supervised | ~29% top-1 | ~3% (1/34) |
+| period | dating U / V / M | Rundata dating prefix (100%) | ~82% | ~56% (Viking) |
+| region | geographic attribution | signature prefix (U, Ög, DR…), 11 classes + other (94%) | ~46% | ~24% (Norway) |
+
+Restoration is the hard task (short inscriptions give each gap little context) but is
+self-supervised, so its training signal is unbounded. It also doubles as a scoring engine
+for ranking competing readings of contested strings — the original runeGPT goal, and the
+exact problem behind 150 years of argument over Rök's `raiþ þiaurikR` (Theodoric) vs Bo
+Ralph's re-segmentation `raið iau rinkR`.
+
 ## Later: a runic Gemma via LoRA
 
 Build instruction pairs from `corpus.jsonl` (runes → transliteration → Old Norse →
