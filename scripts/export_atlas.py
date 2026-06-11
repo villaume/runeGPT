@@ -4,7 +4,7 @@
 Reads data/corpus.jsonl, keeps the inscriptions that have coordinates, and runs
 the trained Ithaca model (checkpoints-ithaca/) over each one so its period /
 region / material predictions ship as static data — the web map needs no live
-inference. Output: web/atlas.json.
+inference. Output: docs/atlas.json (served via GitHub Pages).
 
 Usage: uv run python scripts/export_atlas.py
 """
@@ -85,11 +85,11 @@ def main():
             }
         )
 
-    web = ROOT / "web"
-    web.mkdir(exist_ok=True)
-    (web / "atlas.json").write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")))
-    size_mb = (web / "atlas.json").stat().st_size / 1e6
-    print(f"{len(out)} geolocated inscriptions -> web/atlas.json ({size_mb:.1f} MB)")
+    docs = ROOT / "docs"
+    docs.mkdir(exist_ok=True)
+    (docs / "atlas.json").write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")))
+    size_mb = (docs / "atlas.json").stat().st_size / 1e6
+    print(f"{len(out)} geolocated inscriptions -> docs/atlas.json ({size_mb:.1f} MB)")
     if out and "p_period" in out[0]:
         pa = sum(1 for r in out if r["period"] and r["period"] == r["p_period"]) / len(out)
         print(f"model period prediction matches ground truth on {pa:.0%} of mapped stones")

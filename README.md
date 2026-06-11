@@ -80,11 +80,13 @@ period/region/material predictions.
 
 ```bash
 uv run python scripts/ithaca.py        # train (writes checkpoints-ithaca/)
-uv run python scripts/export_atlas.py  # corpus + predictions -> web/atlas.json
-python3 -m http.server -d web 8777     # open http://localhost:8777
+uv run python scripts/export_atlas.py  # corpus + predictions -> docs/atlas.json
+python3 -m http.server -d docs 8777    # open http://localhost:8777
 ```
 
-`web/` is a self-contained Leaflet site (no build step) — deployable to GitHub Pages as-is.
+`docs/` is a self-contained Leaflet site (no build step). Enable GitHub Pages
+(Settings → Pages → deploy from `main`, folder `/docs`) to publish it at
+`villaume.github.io/runeGPT`.
 
 ## Later: a runic Gemma via LoRA
 
