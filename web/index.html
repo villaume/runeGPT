@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Runestone Atlas — runeGPT</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+<style>
+  :root { --bg:#14110e; --panel:#1d1813; --ink:#ece3d4; --muted:#9b8f7d; --line:#3a3024; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; font-family: ui-sans-serif, system-ui, sans-serif; background:var(--bg); color:var(--ink); }
+  #app { display:flex; flex-direction:column; height:100%; }
+  header { padding:10px 16px; border-bottom:1px solid var(--line); display:flex; gap:18px; align-items:center; flex-wrap:wrap; }
+  h1 { font-size:18px; margin:0; font-weight:650; letter-spacing:.3px; }
+  h1 .r { color:#c79b5d; }
+  .sub { color:var(--muted); font-size:13px; }
+  .ctl { display:flex; gap:6px; align-items:center; font-size:13px; color:var(--muted); }
+  select, .chip { background:var(--panel); color:var(--ink); border:1px solid var(--line); border-radius:7px; padding:4px 8px; font-size:13px; }
+  .chip { cursor:pointer; user-select:none; }
+  .chip.off { opacity:.35; }
+  #count { margin-left:auto; color:var(--muted); font-size:13px; }
+  #map { flex:1; }
+  .leaflet-popup-content-wrapper { background:var(--panel); color:var(--ink); border:1px solid var(--line); }
+  .leaflet-popup-tip { background:var(--panel); }
+  .pop .sig { font-weight:700; font-size:14px; }
+  .pop .runes { font-size:26px; line-height:1.35; margin:6px 0; color:#e9c891; word-break:break-word; }
+  .pop .tr { color:var(--muted); font-size:12px; font-style:italic; margin-bottom:6px; }
+  .pop .en { font-size:13px; margin-bottom:6px; }
+  .pop .meta { font-size:12px; color:var(--muted); border-top:1px solid var(--line); padding-top:6px; }
+  .pop .pred { font-size:11px; color:#8fae8f; margin-top:4px; }
+  .legend { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:12px; line-height:1.7; }
+  .legend i { display:inline-block; width:11px; height:11px; border-radius:50%; margin-right:6px; vertical-align:-1px; }
+  a { color:#c79b5d; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1><span class="r">ᚱ</span>unestone Atlas</h1>
+    <span class="sub">runeGPT · Rundata corpus</span>
+    <span class="ctl">Colour by
+      <select id="colorby">
+        <option value="period">period (dating)</option>
+        <option value="material_type">material</option>
+        <option value="agree">model agreement</option>
+      </select>
+    </span>
+    <span class="ctl">Period
+      <span class="chip" data-p="V">Viking</span>
+      <span class="chip" data-p="M">Medieval</span>
+      <span class="chip" data-p="U">pre-Viking</span>
+    </span>
+    <span id="count"></span>
+  </header>
+  <div id="map"></div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script>
+const PALETTE = {
+  period:        { V:"#c79b5d", M:"#6f9bd1", U:"#b96b6b", _:"#777" },
+  material_type: { stone:"#9b9b9b", wood:"#a9763e", metal:"#d4c25a", "bone/antler":"#cfc3a8", plaster:"#b98fb0", other:"#7d9b7d", unknown:"#555" },
+  agree:         { yes:"#6fae7a", no:"#cc6b6b" },
+};
+const LABELS = {
+  period:{V:"Viking Age",M:"Medieval",U:"pre-Viking",_:"undated"},
+  material_type:{stone:"stone",wood:"wood",metal:"metal","bone/antler":"bone/antler",plaster:"plaster",other:"other",unknown:"unknown"},
+  agree:{yes:"model = ground truth (period)",no:"model ≠ ground truth"},
+};
+const esc = s => (s||"").replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+
+const map = L.map("map", { preferCanvas:true }).setView([60.0, 16.0], 5);
+L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+  attribution:'&copy; OpenStreetMap, &copy; CARTO · data: <a href="https://www.runesdb.eu/">Rundata/RuneS</a> (ODbL)',
+  maxZoom:18,
+}).addTo(map);
+
+let DATA = [], cluster = null;
+const activePeriods = new Set(["V","M","U"]);
+
+function keyFor(d, dim){
+  if (dim === "agree") return (d.period && d.period === d.p_period) ? "yes" : "no";
+  return d[dim] || (dim==="period" ? "_" : "unknown");
+}
+function colorFor(d, dim){ return (PALETTE[dim][keyFor(d,dim)]) || "#777"; }
+
+function popup(d){
+  const pred = d.p_period ? `<div class="pred">model: ${esc(LABELS.period[d.p_period]||d.p_period)} · ${esc(d.p_region)} · ${esc(d.p_material)}</div>` : "";
+  return `<div class="pop">
+    <div class="sig">${esc(d.sig)}</div>
+    <div class="runes">${esc(d.runes)}</div>
+    <div class="tr">${esc(d.translit)}</div>
+    ${d.english ? `<div class="en">${esc(d.english)}</div>` : ""}
+    <div class="meta">${esc(LABELS.period[d.period]||"undated")} · ${esc(d.dating||"")}
+      ${d.material ? " · "+esc(d.material) : ""}${d.parish ? " · "+esc(d.parish) : ""}</div>
+    ${pred}
+  </div>`;
+}
+
+function render(){
+  const dim = document.getElementById("colorby").value;
+  if (cluster) map.removeLayer(cluster);
+  cluster = L.markerClusterGroup({ chunkedLoading:true, maxClusterRadius:45 });
+  let shown = 0;
+  for (const d of DATA){
+    if (d.period && !activePeriods.has(d.period)) continue;  // undated stones always shown
+    const m = L.circleMarker([d.lat, d.lon], {
+      radius:5, weight:1, color:"#0008", fillColor:colorFor(d,dim), fillOpacity:.85,
+    });
+    m.bindPopup(popup(d), { maxWidth:340 });
+    cluster.addLayer(m); shown++;
+  }
+  map.addLayer(cluster);
+  document.getElementById("count").textContent = shown.toLocaleString() + " stones shown";
+  drawLegend(dim);
+}
+
+let legendCtl = null;
+function drawLegend(dim){
+  if (legendCtl) map.removeControl(legendCtl);
+  legendCtl = L.control({ position:"bottomright" });
+  legendCtl.onAdd = () => {
+    const div = L.DomUtil.create("div", "legend");
+    div.innerHTML = Object.entries(PALETTE[dim])
+      .filter(([k]) => k !== "_")
+      .map(([k,c]) => `<div><i style="background:${c}"></i>${esc(LABELS[dim][k]||k)}</div>`).join("");
+    return div;
+  };
+  legendCtl.addTo(map);
+}
+
+document.getElementById("colorby").addEventListener("change", render);
+document.querySelectorAll(".chip").forEach(ch => ch.addEventListener("click", () => {
+  const p = ch.dataset.p;
+  if (activePeriods.has(p)) { activePeriods.delete(p); ch.classList.add("off"); }
+  else { activePeriods.add(p); ch.classList.remove("off"); }
+  render();
+}));
+
+fetch("atlas.json").then(r => r.json()).then(d => { DATA = d; render(); });
+</script>
+</body>
+</html>
