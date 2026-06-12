@@ -109,6 +109,19 @@ uv run python scripts/tafl_demo.py --list     # the reference rule sets
 uv run python scripts/tafl_demo.py fetlar --seed 7   # random rollout + board render
 ```
 
+**Milestone 2 (done):** alpha-beta search (negamax + transposition table), randomised-opening
+self-play, and a brandub balance sweep. First real signal — the king-capture rule dominates
+balance: a **strong king** (taken on four sides) makes 7×7 a near-guaranteed defender win,
+while a **weak king** (captured like an ordinary man) gives a near-50/50, highly decisive game
+that *converges to parity under stronger search*. Matches the historical debate; details in
+[`tafl/DESIGN.md`](tafl/DESIGN.md) §6a.
+
+```bash
+uv run python -m tafl.tests.test_search       # 6/6 search + balance tests
+uv run python scripts/tafl_balance.py --games 30 --depth 3            # the balance table
+uv run python scripts/tafl_balance.py --games 20 --depth 3 --sensitivity
+```
+
 ## Later: a runic Gemma via LoRA
 
 Build instruction pairs from `corpus.jsonl` (runes → transliteration → Old Norse →
