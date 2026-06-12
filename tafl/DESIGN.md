@@ -153,8 +153,10 @@ Apple Silicon, minutes not days" ethos, and the Atlas/Pages pattern for a visual
    Negamax + alpha-beta + transposition table (`agents/minimax.py`), heuristic eval
    (`eval.py`), randomised-opening self-play (`selfplay.py`), balance metrics (`balance.py`),
    and a brandub variant sweep (`scripts/tafl_balance.py`). First real balance signal below.
-3. **Minimax self-play sweep on 9×9.** Rank candidate Tablut rule sets by §4 metrics; see if
-   the Linnaeus-faithful set scores more balanced than the Smith-mistranslation set.
+3. **Minimax self-play sweep on 9×9.** ✅ **Done.** Tablut variant sweep across the two
+   contested axes (king escape, king capture) in `scripts/tafl_tablut.py`, reusing the
+   milestone-2 machinery via `balance.sweep`. Result in §6b — and it is *not* the tidy
+   "Linnaeus balanced, Smith broken" story we guessed; both literal readings are imbalanced.
 4. **AlphaZero-lite (MLX)** for 9×9/11×11 to confirm the minimax ranking holds under stronger
    play (the `agent_sensitivity` check).
 5. **Write-up + optional Atlas tab.** The deliverable is a *report on plausible rule regions*,
@@ -185,6 +187,41 @@ the point, validates the whole premise: rule choices produce *measurable, separa
 signatures. **Caveat:** depth 3 is a modest oracle and the encircling attacker is the harder
 side to search, so "0% attacker" partly reflects search difficulty; firming it up needs the
 deeper search / AlphaZero-lite of later milestones (and a true brandub solve as ground truth).
+
+---
+
+## 6b. Tablut signal (milestone 3, 9×9 Linnaeus vs. Smith)
+
+Alpha-beta self-play, 24 randomised-opening games/variant, at depth 1 and depth 3:
+
+| tablut variant | atk@3 | **def@3** | draw@3 | def@1 → def@3 |
+|---|---|---|---|---|
+| Linnaeus: edge + 4-side king | 0% | **83%** | 17% | 92% → 83% |
+| Smith 1811: edge + weak king | 62% | **21%** | 17% | 54% → 21% |
+| edge + edge-counts king | 0% | **83%** | 17% | 92% → 83% |
+| corner + 4-side king | 0% | **58%** | 42% | 83% → 58% |
+| corner + weak king | 79% | **12%** | 8% | 33% → 12% |
+
+The clean hypothesis (Linnaeus balanced, Smith broken) is **wrong**, and that's the interesting
+part. On 9×9 *neither literal reading is balanced*: the faithful four-side king is heavily
+king-favoured (83% def), while the weak "king like a man" reading flips hard to the attackers.
+The balanced point sits **between** the two historical readings — which is exactly why
+real reconstructors (Aage Nielsen et al.) kept adjusting tablut rather than playing it as
+recorded. The model reproduces the *reason the reconstruction problem exists*.
+
+**Direction of travel (sensitivity).** Deeper search helps the attacker in *every* variant
+(def win-rate falls d1→d3 across the board), because building an encirclement needs more
+look-ahead than running for the edge. So: the weak-king readings are *robustly* too generous
+to attackers (they only get worse for the king under stronger play), while the four-side
+king readings are king-favoured but *closing* — `corner + 4-side king` drops 83%→58% def and
+is the fastest-converging candidate for a balanced region. The likely historical answer is a
+strong-ish king plus a balancing convention the bare text omits (e.g. extra restrictions on
+the throne, or the attacker's first-move tempo), not either literal extreme.
+
+**Caveat, louder at 9×9 than 7×7:** depth-3 attackers play below the level needed to convert
+an encirclement, so every defender win-rate here is an *upper bound* that will compress under
+the deeper / AlphaZero-lite oracle of milestone 4. We can already trust the *ordering* and the
+*direction*; we cannot yet name the single balanced rule set.
 
 ---
 

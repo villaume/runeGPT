@@ -68,6 +68,12 @@ def run_balance(
     )
 
 
+def sweep(variants: dict[str, TaflRules], **kw) -> dict[str, Balance]:
+    """Run ``run_balance`` over a named set of rule sets. Keyword args are passed
+    straight through (games, depth, opening_random_plies, max_plies, seed)."""
+    return {name: run_balance(rules, **kw) for name, rules in variants.items()}
+
+
 def compare_strengths(rules: TaflRules, depths=(1, 3), **kw) -> dict[int, Balance]:
     """Run the same rule set at several search depths. If the win-rate swings a lot
     between weak and strong play, the rule set is only "balanced" for weak players --

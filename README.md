@@ -117,9 +117,21 @@ that *converges to parity under stronger search*. Matches the historical debate;
 [`tafl/DESIGN.md`](tafl/DESIGN.md) §6a.
 
 ```bash
-uv run python -m tafl.tests.test_search       # 6/6 search + balance tests
+uv run python -m tafl.tests.test_search       # search + balance tests
 uv run python scripts/tafl_balance.py --games 30 --depth 3            # the balance table
 uv run python scripts/tafl_balance.py --games 20 --depth 3 --sensitivity
+```
+
+**Milestone 3 (done):** the same machinery on 9×9 **Tablut**, comparing the Linnaeus (1732)
+and Smith (1811) readings. The tidy guess — Linnaeus balanced, Smith broken — is *wrong*, and
+that's the find: **neither literal reading is balanced** (the four-side king is heavily
+king-favoured, the weak king flips to the attackers), so the playable rules sit *between* the
+historical readings — which is exactly why reconstructors kept adjusting tablut rather than
+playing it as recorded. The model reproduces *why the reconstruction problem exists*. See
+[`tafl/DESIGN.md`](tafl/DESIGN.md) §6b.
+
+```bash
+uv run python scripts/tafl_tablut.py --games 24 --depth 3      # Linnaeus vs Smith landscape
 ```
 
 ## Later: a runic Gemma via LoRA

@@ -85,6 +85,15 @@ def test_balance_rates_are_a_distribution():
     assert b.mean_plies >= 1
 
 
+def test_sweep_runs_over_a_variant_set():
+    from tafl.balance import Balance, sweep
+    from tafl.rules import tablut_linnaeus_9x9, tablut_smith_1811_9x9
+    variants = {"linnaeus": tablut_linnaeus_9x9(), "smith": tablut_smith_1811_9x9()}
+    out = sweep(variants, games=2, depth=1, opening_random_plies=4, max_plies=60)
+    assert set(out) == {"linnaeus", "smith"}
+    assert all(isinstance(b, Balance) for b in out.values())
+
+
 # --- manual runner ----------------------------------------------------------
 def _run_all() -> int:
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
