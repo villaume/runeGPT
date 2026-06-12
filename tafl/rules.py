@@ -55,7 +55,11 @@ class CornerRule:
 #                   a king on the wall falls to 3 attackers and in a corner to 2.
 #   "two_sides"   : king taken custodially like an ordinary soldier (two opposite
 #                   sides). Strongly attacker-favoured.
-KingCapture = Literal["four_sides", "edge_counts", "two_sides"]
+#   "two_sides_strong_throne"
+#                 : the authoritative Aage/World-Tafl-Federation reading — custodial
+#                   (two sides) in the open, but a full surround is needed on the
+#                   throne (and, if throne.hostile_to_king, also adjacent to it).
+KingCapture = Literal["four_sides", "edge_counts", "two_sides", "two_sides_strong_throne"]
 
 # King's win condition.
 #   "corner"   : king must reach one of the four corners.
@@ -94,16 +98,19 @@ class TaflRules:
 # to triangulate, so none of these is asserted to be canonical.
 
 def brandub_7x7() -> TaflRules:
-    """7x7 Irish brandub. Common modern reconstruction: corner escape, king taken
-    on four sides, empty throne hostile to the king (so a king beside it falls to
-    three)."""
+    """7x7 Irish brandub, faithful to the World Tafl Federation / Aage Nielsen rules:
+    a *weak* king captured like an ordinary man (two sides) everywhere except on the
+    throne, where a full four-side surround is required; corner escape; throne hostile
+    to the attackers always but never to the king; corners restricted and hostile to
+    both sides; the repeating side (almost always the defender) loses."""
     return TaflRules(
         board_size=7,
         layout="brandub",
-        king_capture="four_sides",
+        king_capture="two_sides_strong_throne",
         king_goal="corner",
-        throne=ThroneRule(hostile_to_king=True),
+        throne=ThroneRule(hostile_to_king=False, hostile_to_attackers=True),
         corners=CornerRule(),
+        repetition="loss_mover",
     )
 
 
@@ -138,10 +145,48 @@ def tablut_smith_1811_9x9() -> TaflRules:
     )
 
 
+def tablut_historical_9x9() -> TaflRules:
+    """9x9 Tablut as the World Tafl Federation / Aage Nielsen actually play it
+    ("Historical Hnefatafl"): a weak king captured like an ordinary man in the open,
+    but needing a full surround on the throne and three sides when adjacent to it;
+    edge escape; throne hostile to the attackers always and to the defenders only when
+    empty; open corners; the repeating attacker loses. Notably this sits *between* our
+    Linnaeus (four-side) and Smith (pure two-side) readings — see DESIGN §6b/§8."""
+    return TaflRules(
+        board_size=9,
+        layout="tablut",
+        king_capture="two_sides_strong_throne",
+        king_goal="any_edge",
+        throne=ThroneRule(hostile_to_king=True, hostile_to_attackers=True),
+        corners=CornerRule(soldiers_may_stop=True, hostile_to_attackers=False,
+                           hostile_to_defenders=False, hostile_to_king=False),
+        repetition="loss_attacker",
+    )
+
+
 def fetlar_11x11() -> TaflRules:
-    """11x11 Fetlar (Aage Nielsen community reconstruction): corner escape, strong
-    king taken on four sides, hostile throne and corners, shieldwall captures on.
-    Exit forts are part of the full Copenhagen ruleset but not yet implemented."""
+    """11x11 Fetlar (Aage Nielsen): corner escape, strong king taken on four sides
+    (three beside the throne), hostile throne and corners, armed king, repetitions
+    are draws. Fetlar has *no* shieldwall and no exit fort — those belong to
+    Copenhagen; an earlier version of this file wrongly enabled shieldwall here."""
+    return TaflRules(
+        board_size=11,
+        layout="fetlar",
+        king_capture="four_sides",
+        king_goal="corner",
+        throne=ThroneRule(hostile_to_king=True, hostile_to_attackers=True,
+                          hostile_to_defenders=True),
+        corners=CornerRule(),
+        shieldwall=False,
+        repetition="draw",
+    )
+
+
+def copenhagen_11x11() -> TaflRules:
+    """11x11 Copenhagen (Aage Nielsen): like Fetlar but *with* shieldwall capture and
+    a perpetual-repetition loss for the attackers. The full Copenhagen ruleset also
+    grants an edge-fort exit win for the king (``exit_fort``), which the engine does
+    not yet implement, so this reference leaves it off — see DESIGN §8."""
     return TaflRules(
         board_size=11,
         layout="fetlar",
@@ -151,6 +196,8 @@ def fetlar_11x11() -> TaflRules:
                           hostile_to_defenders=True),
         corners=CornerRule(),
         shieldwall=True,
+        exit_fort=False,
+        repetition="loss_attacker",
     )
 
 
@@ -175,6 +222,8 @@ REFERENCE_RULES = {
     "brandub": brandub_7x7,
     "tablut_linnaeus": tablut_linnaeus_9x9,
     "tablut_smith_1811": tablut_smith_1811_9x9,
+    "tablut_historical": tablut_historical_9x9,
     "fetlar": fetlar_11x11,
+    "copenhagen": copenhagen_11x11,
     "hnefatafl13": hnefatafl_13x13,
 }

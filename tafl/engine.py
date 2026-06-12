@@ -144,9 +144,12 @@ class Tafl:
         if self.is_corner(r, c):
             return (self.rules.corners.hostile_to_attackers if enemy_is_attacker
                     else self.rules.corners.hostile_to_defenders)
-        if self.is_throne(r, c) and board[self.idx(r, c)] == EMPTY:
-            return (self.rules.throne.hostile_to_attackers if enemy_is_attacker
-                    else self.rules.throne.hostile_to_defenders)
+        if self.is_throne(r, c):
+            # Aage/WTF: the throne is hostile to the attackers *always* (even while the
+            # king occupies it), but hostile to the defenders only when empty.
+            if enemy_is_attacker:
+                return self.rules.throne.hostile_to_attackers
+            return self.rules.throne.hostile_to_defenders and board[self.idx(r, c)] == EMPTY
         return False
 
     def _is_anchor(self, side: str, r: int, c: int, board: tuple[int, ...]) -> bool:
@@ -233,7 +236,16 @@ class Tafl:
         mode = self.rules.king_capture
         if mode in ("four_sides", "edge_counts"):
             return all(self._king_side_hostile(kr, kc, dr, dc, board) for dr, dc in _DIRS)
-        # two_sides: custodial along either axis (off-board never counts)
+        if mode == "two_sides_strong_throne":
+            # Aage/WTF reading: the king is taken custodially (two sides) in the open,
+            # but needs a full surround on/around the throne. He is strong ON the throne
+            # always; whether being merely ADJACENT also strengthens him is governed by
+            # throne.hostile_to_king (true for Tablut -> 3 sides; false for Brandubh).
+            on_throne = (kr, kc) == self.throne_rc
+            adj_throne = any((kr + dr, kc + dc) == self.throne_rc for dr, dc in _DIRS)
+            if on_throne or (adj_throne and self.rules.throne.hostile_to_king):
+                return all(self._king_side_hostile(kr, kc, dr, dc, board) for dr, dc in _DIRS)
+        # two_sides (and the open-board case above): custodial along either axis
         horiz = (self._king_side_hostile(kr, kc, 0, -1, board)
                  and self._king_side_hostile(kr, kc, 0, 1, board))
         vert = (self._king_side_hostile(kr, kc, -1, 0, board)

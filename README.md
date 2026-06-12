@@ -144,6 +144,14 @@ most balanced**. The same king-capture dial controls balance from 7×7 to 13×13
 uv run python scripts/tafl_hnefatafl13.py --games 10 --depth 3   # big-board landscape
 ```
 
+**Rule fidelity audit** (vs. [aagenielsen.dk](https://aagenielsen.dk/tafl_rules.php), the
+authoritative modern source): our reference rule sets were checked and corrected. Notably our
+**brandub** had a *strong* king but the World Tafl Federation rule is a **weak** king (taken on
+two sides, except a full surround on the throne), and our **fetlar** wrongly had shieldwall (that's
+a Copenhagen rule). Both are fixed; a faithful `tablut_historical` and `copenhagen` were added.
+The pleasing part: the authoritative rules land in the *intermediate, fully-decisive* region our
+search had flagged as balanced. Full audit table in [`tafl/DESIGN.md`](tafl/DESIGN.md) §8.
+
 ## Later: a runic Gemma via LoRA
 
 Build instruction pairs from `corpus.jsonl` (runes → transliteration → Old Norse →
