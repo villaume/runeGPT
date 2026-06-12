@@ -88,6 +88,27 @@ python3 -m http.server -d docs 8777    # open http://localhost:8777
 (Settings → Pages → deploy from `main`, folder `/docs`) to publish it at
 `villaume.github.io/runeGPT`.
 
+## Side quest: reconstructing Hnefatafl rules by self-play
+
+The Norse board game **Hnefatafl** survives without a complete rule book — the only near-full
+historical account is Linnaeus's 1732 record of Sámi *tablut*, and it's ambiguous. You can't
+*recover* the lost rules (no game records survive to learn from), but you can ask **which
+candidate rule sets produce a balanced, deep game** and assume the historical ones sit there —
+the method behind the [Digital Ludeme Project / Ludii](https://ludii.games). Not Q-learning
+(astronomical state space, adversarial); the right tool is AlphaZero-style self-play, with
+7×7 brandub small enough to nearly *solve* first. Full plan in [`tafl/DESIGN.md`](tafl/DESIGN.md).
+
+**Milestone 1 (done):** a generic engine parameterised entirely by a `TaflRules` config (one
+implementation, no per-variant code) covering the genuinely-undetermined mechanics — king
+capture (four-sides / edge-counts / two-sides), corner vs. edge escape, throne/corner
+hostility, shieldwall captures — plus four named reference rule sets and a 16-test suite.
+
+```bash
+uv run python -m tafl.tests.test_engine       # 16/16 engine-correctness tests
+uv run python scripts/tafl_demo.py --list     # the reference rule sets
+uv run python scripts/tafl_demo.py fetlar --seed 7   # random rollout + board render
+```
+
 ## Later: a runic Gemma via LoRA
 
 Build instruction pairs from `corpus.jsonl` (runes → transliteration → Old Norse →
