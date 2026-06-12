@@ -25,6 +25,7 @@ from tafl.rules import (
     ThroneRule,
     TaflRules,
     brandub_7x7,
+    copenhagen_11x11,
     fetlar_11x11,
     hnefatafl_13x13,
     tablut_linnaeus_9x9,
@@ -220,6 +221,43 @@ def test_shieldwall_captures_a_bracketed_edge_row():
     assert ns.board[g.idx(0, 3)] == EMPTY
     assert ns.board[g.idx(0, 4)] == EMPTY
     assert ns.board[g.idx(0, 5)] == EMPTY
+
+
+# --- weak king / strong throne (the WTF / Aage reading) ---------------------
+def test_weak_strong_throne_open_vs_on_throne():
+    g = make_game(7, king_capture="two_sides_strong_throne",
+                  throne=ThroneRule(hostile_to_king=False, hostile_to_attackers=True))
+    # open board: a two-side custodial pincer takes the king (mover comes from (4,2))
+    s = State(board_from(g, {(1, 1): KING, (1, 0): ATTACKER, (4, 2): ATTACKER}), ATTACKERS)
+    assert g.king_square(g.apply(s, (4, 2, 1, 2)).board) is None
+    # on the throne: two sides is NOT enough...
+    s2 = State(board_from(g, {(3, 3): KING, (3, 2): ATTACKER, (3, 6): ATTACKER}), ATTACKERS)
+    assert g.king_square(g.apply(s2, (3, 6, 3, 4)).board) is not None
+    # ...but a full four-side surround is
+    s3 = State(board_from(g, {(3, 3): KING, (2, 3): ATTACKER, (4, 3): ATTACKER,
+                              (3, 2): ATTACKER, (3, 6): ATTACKER}), ATTACKERS)
+    assert g.king_square(g.apply(s3, (3, 6, 3, 4)).board) is None
+
+
+def test_weak_strong_throne_adjacency_depends_on_hostile_to_king():
+    pieces = {(3, 4): KING, (2, 4): ATTACKER, (6, 4): ATTACKER}   # king beside throne (3,3)
+    move = (6, 4, 4, 4)                             # mover -> (4,4): vertical pincer with (2,4)
+    # Brandubh: throne not hostile to king -> adjacency is "open" -> two sides take him
+    g_weak = make_game(7, king_capture="two_sides_strong_throne",
+                       throne=ThroneRule(hostile_to_king=False))
+    assert g_weak.king_square(g_weak.apply(State(board_from(g_weak, pieces), ATTACKERS), move).board) is None
+    # Tablut: throne hostile to king -> adjacency is strong -> two sides is not enough
+    g_strong = make_game(7, king_capture="two_sides_strong_throne",
+                         throne=ThroneRule(hostile_to_king=True))
+    assert g_strong.king_square(g_strong.apply(State(board_from(g_strong, pieces), ATTACKERS), move).board) is not None
+
+
+def test_fetlar_has_no_shieldwall_but_copenhagen_does():
+    assert fetlar_11x11().shieldwall is False
+    assert copenhagen_11x11().shieldwall is True
+    cph = Tafl(copenhagen_11x11())
+    s = cph.initial_state()
+    assert count(s.board, ATTACKER) == 24 and count(s.board, DEFENDER) == 12
 
 
 # --- smoke: random games terminate cleanly ---------------------------------

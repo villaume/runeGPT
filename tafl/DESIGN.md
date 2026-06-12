@@ -272,3 +272,34 @@ boards push toward harder escape (corner) and/or an easier-to-take king to stay 
   a clean MLX implementation — not inventing it.
 ```
 
+---
+
+## 8. Rule fidelity vs. the World Tafl Federation / Aage Nielsen
+
+Audit of our reference rule sets against the authoritative modern rules at
+[aagenielsen.dk/tafl_rules.php](https://aagenielsen.dk/tafl_rules.php) (Fetlar, Copenhagen,
+Historical Hnefatafl/Tablut 9×9, and the WTF Brandubh leaflet). Differences found and fixed:
+
+| # | our rule set (before) | authoritative rule | resolution |
+|---|---|---|---|
+| 1 | **brandub**: strong king (four sides) | WTF Brandubh: **weak king** — taken like an ordinary man (two sides) *except* a full surround on the throne; throne never hostile to the king but always to the attackers; the repeating side loses | **fixed** — new `two_sides_strong_throne` capture mode; `brandub_7x7` rebuilt faithfully |
+| 2 | **fetlar**: `shieldwall=True` | Fetlar has **no shieldwall** (it's a Copenhagen rule); Fetlar repetitions are draws | **fixed** — shieldwall off; added a faithful `copenhagen_11x11` (shieldwall on, attacker loses on repetition) |
+| 3 | **tablut**: only `linnaeus` (four-side) and `smith` (two-side) | WTF Historical Hnefatafl: weak king, but full surround on the throne and three sides beside it; edge escape; attacker loses on repetition | **added** `tablut_historical_9x9` — the authoritative reading, which sits *between* our two bracket readings |
+| 4 | throne hostile only when empty (both sides) | throne hostile to attackers **always**, to defenders only when empty | **fixed** in `_hostile_square_for` (practically equivalent — a king on the throne already anchors defender captures — but now explicit) |
+| 5 | repetition default = draw everywhere | Tablut/Copenhagen: loss for attackers; Brandubh: loss for the repeater; Fetlar: draw | **fixed** — set per reference |
+| 6 | Copenhagen **exit-fort** win | a king who reaches the edge in an unbreakable fort wins | **not yet implemented** — engine still guards `exit_fort`; `copenhagen_11x11` leaves it off, documented |
+| 7 | **hnefatafl13** (our 13×13) | **not in the WTF/Aage canon at all** — no 13×13 on the site | left as-is, explicitly flagged as a Ludii/other-source, contested setup |
+
+**A nice convergence.** The authoritative rules independently land in the *intermediate* region our
+search flagged as balanced. After the fix, at depth 3:
+
+| rule set | atk | def | decisive | vs. our brackets |
+|---|---|---|---|---|
+| brandub (WTF weak/strong-throne) | 33% | 67% | 100% | between strong (0/63, draws) and pure-weak (43/47) |
+| tablut_historical (WTF) | 17% | 83% | 100% | more decisive than `linnaeus` (0/83, draws), still king-leaning at d3 |
+
+Both authoritative rules trade the draw-heavy, attacker-can't-win character of a pure strong king
+for a fully *decisive* game with the king modestly favoured — exactly the kind of middle ground the
+milestone-2/3 sweeps pointed to. The depth-3 caveat still applies (attackers underplayed, so the
+king-leaning numbers are upper bounds), so this is corroboration of the *method*, not a final verdict.
+
