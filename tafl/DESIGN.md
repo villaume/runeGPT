@@ -149,14 +149,42 @@ Apple Silicon, minutes not days" ethos, and the Atlas/Pages pattern for a visual
    16-test correctness suite (`tests/test_engine.py`, all passing). Reproducing published
    *win-rates* is deferred to milestone 3 (it needs the search agents); milestone 1's contract
    is engine *correctness* — captures, king-capture modes, escapes, shieldwall, terminals.
-2. **Brandub near-solve.** Endgame/alpha-beta; ground-truth balance for 7×7. Validates the
-   whole premise cheaply before any neural net.
+2. **Brandub near-solve.** ✅ **Done (alpha-beta, not yet a full game-theoretic solve).**
+   Negamax + alpha-beta + transposition table (`agents/minimax.py`), heuristic eval
+   (`eval.py`), randomised-opening self-play (`selfplay.py`), balance metrics (`balance.py`),
+   and a brandub variant sweep (`scripts/tafl_balance.py`). First real balance signal below.
 3. **Minimax self-play sweep on 9×9.** Rank candidate Tablut rule sets by §4 metrics; see if
    the Linnaeus-faithful set scores more balanced than the Smith-mistranslation set.
 4. **AlphaZero-lite (MLX)** for 9×9/11×11 to confirm the minimax ranking holds under stronger
    play (the `agent_sensitivity` check).
 5. **Write-up + optional Atlas tab.** The deliverable is a *report on plausible rule regions*,
    citing Ludii/DLP and Aage Nielsen, not a claim to have "found the rules."
+
+---
+
+## 6a. First balance signal (milestone 2, brandub 7×7)
+
+Alpha-beta vs. alpha-beta, depth 3, 30 randomised-opening games per variant:
+
+| brandub variant | attacker | defender | draw | imbalance | decisive |
+|---|---|---|---|---|---|
+| four_sides + hostile throne | 0% | 63% | 37% | 63% | 63% |
+| four_sides + plain throne | 0% | 63% | 37% | 63% | 63% |
+| edge_counts (wall captures) | 3% | 60% | 37% | 57% | 63% |
+| **two_sides (king like a man)** | **43%** | **47%** | **10%** | **3%** | **90%** |
+
+The contested mechanic is exactly the king-capture rule, and it dominates balance. A **strong
+king** (taken only on four sides) makes 7×7 a near-guaranteed defender win/draw — attackers
+essentially can't win. A **weak king** (captured custodially like an ordinary man, the
+Linnaeus/Smith reading) gives a near-50/50, highly decisive game. Sensitivity backs this up:
+under stronger search the two_sides line *converges toward parity* (def 30%→45% from depth 1→3)
+— the fingerprint of a real equilibrium — while the four-sides lines stay lopsided.
+
+This matches the historical debate (small boards need a weak king to be playable) and, more to
+the point, validates the whole premise: rule choices produce *measurable, separable* balance
+signatures. **Caveat:** depth 3 is a modest oracle and the encircling attacker is the harder
+side to search, so "0% attacker" partly reflects search difficulty; firming it up needs the
+deeper search / AlphaZero-lite of later milestones (and a true brandub solve as ground truth).
 
 ---
 
