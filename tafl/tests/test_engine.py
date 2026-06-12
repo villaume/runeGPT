@@ -26,10 +26,11 @@ from tafl.rules import (
     TaflRules,
     brandub_7x7,
     fetlar_11x11,
+    hnefatafl_13x13,
     tablut_linnaeus_9x9,
 )
 
-_LAYOUT_BY_SIZE = {7: "brandub", 9: "tablut", 11: "fetlar"}
+_LAYOUT_BY_SIZE = {7: "brandub", 9: "tablut", 11: "fetlar", 13: "hnefatafl13"}
 
 
 def make_game(size: int = 7, **overrides) -> Tafl:
@@ -56,6 +57,7 @@ def test_initial_positions_have_expected_piece_counts():
         (brandub_7x7, 8, 4),
         (tablut_linnaeus_9x9, 16, 8),
         (fetlar_11x11, 24, 12),
+        (hnefatafl_13x13, 24, 12),
     ]:
         g = Tafl(builder())
         s = g.initial_state()

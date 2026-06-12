@@ -157,6 +157,9 @@ Apple Silicon, minutes not days" ethos, and the Atlas/Pages pattern for a visual
    contested axes (king escape, king capture) in `scripts/tafl_tablut.py`, reusing the
    milestone-2 machinery via `balance.sweep`. Result in §6b — and it is *not* the tidy
    "Linnaeus balanced, Smith broken" story we guessed; both literal readings are imbalanced.
+   *Extension (done):* the same sweep on **13×13 great hnefatafl** (`scripts/tafl_hnefatafl13.py`,
+   `hnefatafl_13x13` reference + `hnefatafl13` layout). Result in §6c — edge escape breaks on the
+   big board, corner escape is needed, and the weak king is again the balanced choice.
 4. **AlphaZero-lite (MLX)** for 9×9/11×11 to confirm the minimax ranking holds under stronger
    play (the `agent_sensitivity` check).
 5. **Write-up + optional Atlas tab.** The deliverable is a *report on plausible rule regions*,
@@ -222,6 +225,38 @@ the throne, or the attacker's first-move tempo), not either literal extreme.
 an encirclement, so every defender win-rate here is an *upper bound* that will compress under
 the deeper / AlphaZero-lite oracle of milestone 4. We can already trust the *ordering* and the
 *direction*; we cannot yet name the single balanced rule set.
+
+---
+
+## 6c. Big-board signal (13×13 great hnefatafl, 24+12+1)
+
+Alpha-beta self-play, depth 3, 10 randomised-opening games/variant. The 13×13 setup is itself
+contested — this uses the common 24+12+1 "great cross" reading (a denser 32+16+1 also circulates).
+
+| 13×13 variant | atk | def | draw | imbalance | decisive |
+|---|---|---|---|---|---|
+| corner + 4-side king (ref) | 0% | 40% | 60% | 40% | 40% |
+| **corner + weak king** | 40% | 30% | 30% | **10%** | 70% |
+| corner + edge-counts king | 0% | 30% | 70% | 30% | 30% |
+| edge escape + 4-side king | 0% | 80% | 20% | 80% | 80% |
+
+Two things carry over and one is new:
+
+1. **Edge escape does not scale.** On 13×13 "reach any edge" is trivial for the king (def 80%,
+   games end in ~19 plies) — the big board has too much rim. This is concrete support for the
+   historical pattern that *large* hnefatafl uses **corner** escape while *small* tablut (9×9)
+   could use edge escape: the goal has to get harder as the board grows or the king just walks out.
+2. **Among corner-escape variants the weak king is again the most balanced and decisive**
+   (10% imbalance, 70% decisive), echoing 7×7 and 9×9. The board got 3.4× bigger and the same
+   mechanic still controls balance.
+3. **The strong-king variants are draw-heavy (60–70%)** — but this is the milestone-4 caveat at
+   its loudest. Coordinating 24 attackers into an encirclement on a 13×13 board is *far* beyond a
+   3-ply horizon, so the strong-king "can't convert" reading is unreliable: those draws are the
+   weak oracle failing, not necessarily the rules. 13×13 numbers are the softest in the project
+   and should not be trusted past their ordering until the stronger search arrives.
+
+Cross-board summary: the king-capture rule is the master balance dial at every size, and bigger
+boards push toward harder escape (corner) and/or an easier-to-take king to stay playable.
 
 ---
 

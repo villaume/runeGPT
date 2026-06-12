@@ -14,6 +14,7 @@ from .rules import (
     ThroneRule,
     brandub_7x7,
     fetlar_11x11,
+    hnefatafl_13x13,
     tablut_linnaeus_9x9,
     tablut_smith_1811_9x9,
 )
@@ -24,4 +25,5 @@ __all__ = [
     "ATTACKERS", "DEFENDERS",
     "REFERENCE_RULES",
     "brandub_7x7", "tablut_linnaeus_9x9", "tablut_smith_1811_9x9", "fetlar_11x11",
+    "hnefatafl_13x13",
 ]

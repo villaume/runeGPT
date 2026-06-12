@@ -154,9 +154,27 @@ def fetlar_11x11() -> TaflRules:
     )
 
 
+def hnefatafl_13x13() -> TaflRules:
+    """13x13 great hnefatafl (24+12+1). Like Fetlar but on the larger board: corner
+    escape, strong king taken on four sides, hostile throne and corners, shieldwall.
+    Whether the big board needs a *weak* king to stay playable is exactly what the
+    13x13 sweep tests."""
+    return TaflRules(
+        board_size=13,
+        layout="hnefatafl13",
+        king_capture="four_sides",
+        king_goal="corner",
+        throne=ThroneRule(hostile_to_king=True, hostile_to_attackers=True,
+                          hostile_to_defenders=True),
+        corners=CornerRule(),
+        shieldwall=True,
+    )
+
+
 REFERENCE_RULES = {
     "brandub": brandub_7x7,
     "tablut_linnaeus": tablut_linnaeus_9x9,
     "tablut_smith_1811": tablut_smith_1811_9x9,
     "fetlar": fetlar_11x11,
+    "hnefatafl13": hnefatafl_13x13,
 }
