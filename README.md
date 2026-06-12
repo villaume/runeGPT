@@ -152,6 +152,19 @@ a Copenhagen rule). Both are fixed; a faithful `tablut_historical` and `copenhag
 The pleasing part: the authoritative rules land in the *intermediate, fully-decisive* region our
 search had flagged as balanced. Full audit table in [`tafl/DESIGN.md`](tafl/DESIGN.md) §8.
 
+**Milestone 4 (machinery done):** an **AlphaZero-lite** stack in MLX — board/move encoding, a
+small residual policy+value conv net, PUCT MCTS (net priors + value, no rollouts), a self-play
+training loop, and an `AZAgent` that drops into the same harness. The honest status: the loop is
+validated (8 tests; training loss falls ≈6.9→3.3 on a brandub smoke run; MCTS solves tactics), but
+a tiny net at low sim counts is still a weak, draw-prone player — *not yet* the strong oracle needed
+to re-run the sweeps. Scaling it up (bigger net, more sims/games, batched MCTS) is future work.
+This is the piece that would finally separate "the rules are imbalanced" from "our search was weak."
+
+```bash
+uv run python -m tafl.tests.test_az              # 7/7 AZ stack tests
+uv run python scripts/tafl_az_train.py           # brandub self-play smoke (a few minutes)
+```
+
 ## Later: a runic Gemma via LoRA
 
 Build instruction pairs from `corpus.jsonl` (runes → transliteration → Old Norse →

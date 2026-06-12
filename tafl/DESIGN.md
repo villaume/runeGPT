@@ -161,7 +161,11 @@ Apple Silicon, minutes not days" ethos, and the Atlas/Pages pattern for a visual
    `hnefatafl_13x13` reference + `hnefatafl13` layout). Result in §6c — edge escape breaks on the
    big board, corner escape is needed, and the weak king is again the balanced choice.
 4. **AlphaZero-lite (MLX)** for 9×9/11×11 to confirm the minimax ranking holds under stronger
-   play (the `agent_sensitivity` check).
+   play (the `agent_sensitivity` check). ✅ **Machinery built (`tafl/az/`); oracle-strength
+   training is future work.** Encoding, a small MLX policy+value net, PUCT MCTS, a self-play
+   training loop, and an `AZAgent` that drops into the existing harness — all tested. The smoke
+   run learns (loss falls, MCTS solves tactics) but is not yet strong enough to re-run the
+   sweeps; see §9.
 5. **Write-up + optional Atlas tab.** The deliverable is a *report on plausible rule regions*,
    citing Ludii/DLP and Aage Nielsen, not a claim to have "found the rules."
 
@@ -302,4 +306,36 @@ Both authoritative rules trade the draw-heavy, attacker-can't-win character of a
 for a fully *decisive* game with the king modestly favoured — exactly the kind of middle ground the
 milestone-2/3 sweeps pointed to. The depth-3 caveat still applies (attackers underplayed, so the
 king-leaning numbers are upper bounds), so this is corroboration of the *method*, not a final verdict.
+
+---
+
+## 9. Milestone 4 — AlphaZero-lite (machinery built; oracle-strength is future work)
+
+The recurring caveat across §6a–§6c is that fixed-depth alpha-beta underplays the encircling
+attacker, especially as boards grow. The fix is a search that *learns* to plan. `tafl/az/` builds
+the full AlphaZero-style stack, in the project's MLX idiom:
+
+- **`encoding.py`** — state → `(n, n, 6)` planes (attacker/defender/king/throne/corner/side); moves
+  → a "queen-ray" action space `n·n·4·(n-1)` with exact encode/decode round-trips.
+- **`net.py`** — a small residual conv net (MLX, channels-last) with policy + value heads.
+- **`mcts.py`** — PUCT MCTS using net priors + value, no rollouts; terminal leaves use the true
+  result; Dirichlet root noise for self-play.
+- **`selfplay.py`** — games → (planes, visit-distribution π, outcome z) training samples.
+- **`agent.py`** — `AZAgent.choose(game, state)`, interface-compatible with the alpha-beta/random
+  agents, so it drops straight into `tafl.selfplay.play_game` and the balance harness.
+- **`scripts/tafl_az_train.py`** — the self-play training loop.
+
+**Status — honest.** The loop is validated end-to-end (8 tests: encode/decode, masking, net
+shapes, MCTS solving mate-in-1 even untrained, self-play sample validity, a training step that
+overfits a fixed batch). A short brandub smoke run shows the **training loss falling steadily
+(≈6.9 → 3.3 over 8 rounds)** and the agent beating random more often than not. But at 175k params /
+32 sims / 8 rounds it is a *weak, draw-prone* player — self-play is draw-heavy and the win-rate vs.
+baselines is noisy, not climbing convincingly. **It is not yet the trustworthy oracle**, so the
+§6 sweeps have *not* been re-run with it.
+
+**What "future work" concretely means here:** a bigger net and many more self-play games / sims /
+rounds, plus batched MCTS leaf-evaluation (the current per-leaf net call is the speed bottleneck) so
+9×9–13×13 self-play is affordable. Only once `AZAgent` clearly beats `AlphaBetaAgent(depth≥3)` should
+we trust it to re-run the balance sweeps and finally separate "the rules are imbalanced" from "our
+search was too weak" — the question every earlier milestone deferred to this one.
 
