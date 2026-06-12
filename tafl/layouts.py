@@ -58,8 +58,28 @@ def fetlar() -> tuple[int, ...]:
     return _build(11, king, defenders, attackers)
 
 
+def hnefatafl13() -> tuple[int, ...]:
+    """13x13 great hnefatafl, the common 24+12+1 reading (the 11x11 Fetlar
+    formation scaled up — a 'great cross' of 12 defenders, six attackers per edge).
+    A denser 32+16+1 setup also circulates; this is the spread, less-crowded one."""
+    king = (6, 6)
+    defenders = [
+        (6, 4), (6, 5), (6, 7), (6, 8),
+        (4, 6), (5, 6), (7, 6), (8, 6),
+        (5, 5), (5, 7), (7, 5), (7, 7),
+    ]
+    attackers = [
+        (0, 4), (0, 5), (0, 6), (0, 7), (0, 8), (1, 6),         # top
+        (12, 4), (12, 5), (12, 6), (12, 7), (12, 8), (11, 6),   # bottom
+        (4, 0), (5, 0), (6, 0), (7, 0), (8, 0), (6, 1),         # left
+        (4, 12), (5, 12), (6, 12), (7, 12), (8, 12), (6, 11),   # right
+    ]
+    return _build(13, king, defenders, attackers)
+
+
 LAYOUTS = {
     "brandub": brandub,
     "tablut": tablut,
     "fetlar": fetlar,
+    "hnefatafl13": hnefatafl13,
 }

@@ -134,6 +134,16 @@ playing it as recorded. The model reproduces *why the reconstruction problem exi
 uv run python scripts/tafl_tablut.py --games 24 --depth 3      # Linnaeus vs Smith landscape
 ```
 
+**13×13 extension:** the same sweep on the big "great hnefatafl" board (24+12+1). Two findings —
+**edge escape breaks on a large board** (the king just walks to the nearest rim; def 80%), which
+is concrete support for why *large* hnefatafl historically uses **corner** escape while small
+9×9 tablut could use edge escape; and among corner-escape variants the **weak king is again the
+most balanced**. The same king-capture dial controls balance from 7×7 to 13×13. (`tafl/DESIGN.md` §6c.)
+
+```bash
+uv run python scripts/tafl_hnefatafl13.py --games 10 --depth 3   # big-board landscape
+```
+
 ## Later: a runic Gemma via LoRA
 
 Build instruction pairs from `corpus.jsonl` (runes → transliteration → Old Norse →
